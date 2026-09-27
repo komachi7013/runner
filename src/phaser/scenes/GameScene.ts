@@ -9,7 +9,13 @@ const PIXELS_PER_DISTANCE = 10;
 const GOAL_APPROACH_CLEAR_DISTANCE = 50;
 const LIGHTNING_WARNING_SECONDS = 0.7;
 const LIGHTNING_GROUND_HIT_MARGIN = 12;
-const RUN_ANIMATION_FRAME_RATE = 14;
+const RUN_ANIMATION_FRAME_RATE = 10;
+// Align each complete pose at the torso and waist. The second source row is
+// authored about 35px higher, so it also needs a shared vertical correction.
+const RUN_FRAME_OFFSETS: ReadonlyArray<readonly [number, number]> = [
+  [0, 0], [18, 0], [45, 0],
+  [1, 35], [21, 35], [48, 35],
+];
 
 interface GameEvents {
   onUpdate: (score: number, coins: number, best: number, stage: number, progress: number, retriesRemaining: number) => void;
@@ -34,12 +40,8 @@ interface StormHazard {
 export class GameScene extends Phaser.Scene {
   private runState = new RunState();
   private player!: Phaser.Physics.Arcade.Sprite;
-  private playerLegs!: Phaser.GameObjects.Sprite;
   private playerBaseScaleX = 1;
   private playerBaseScaleY = 1;
-  private runnerFrameWidth = 0;
-  private runnerFrameHeight = 0;
-  private upperBodyCutoff = 0;
   private obstacles!: Phaser.Physics.Arcade.Group;
   private platforms!: Phaser.Physics.Arcade.Group;
   private coins!: Phaser.Physics.Arcade.Group;
@@ -233,10 +235,6 @@ export class GameScene extends Phaser.Scene {
     this.player = this.physics.add.sprite(225, GROUND_Y - 47, 'runner', '0').setDepth(11).setDisplaySize(94, 94);
     this.playerBaseScaleX = this.player.scaleX;
     this.playerBaseScaleY = this.player.scaleY;
-    this.runnerFrameWidth = this.player.frame.realWidth;
-    this.runnerFrameHeight = this.player.frame.realHeight;
-    this.upperBodyCutoff = Math.round(this.runnerFrameHeight * 0.58);
-    this.playerLegs = this.add.sprite(225, GROUND_Y - 47, 'runner', '0').setDepth(10).setDisplaySize(94, 94).setVisible(false);
     this.player.setCollideWorldBounds(false).setGravityY(1650).setBodySize(135, 310).setOffset(140, 55).setBounce(0);
     this.player.setVisible(false);
 
@@ -275,7 +273,17 @@ export class GameScene extends Phaser.Scene {
     if (!texture) return;
 
     const context = texture.context;
-    context.drawImage(source, 0, 0);
+    const frameWidth = Math.floor(source.width / 3);
+    const frameHeight = Math.floor(source.height / 3);
+    for (let frame = 0; frame < 8; frame++) {
+      const cellX = (frame % 3) * frameWidth;
+      const cellY = Math.floor(frame / 3) * frameHeight;
+      const [offsetX, offsetY] = RUN_FRAME_OFFSETS[frame] ?? [0, 0];
+      context.drawImage(
+        source, cellX, cellY, frameWidth, frameHeight,
+        cellX + offsetX, cellY + offsetY, frameWidth, frameHeight,
+      );
+    }
     const image = context.getImageData(0, 0, source.width, source.height);
     const pixels = image.data;
     for (let i = 0; i < pixels.length; i += 4) {
@@ -286,8 +294,6 @@ export class GameScene extends Phaser.Scene {
       if (neutral && red > 224 && green > 224 && blue > 224) pixels[i + 3] = 0;
     }
     context.putImageData(image, 0, 0);
-    const frameWidth = Math.floor(source.width / 3);
-    const frameHeight = Math.floor(source.height / 3);
     for (let frame = 0; frame < 8; frame++) {
       texture.add(String(frame), 0, (frame % 3) * frameWidth, Math.floor(frame / 3) * frameHeight, frameWidth, frameHeight);
     }
@@ -325,7 +331,7 @@ export class GameScene extends Phaser.Scene {
       .setAlpha(1)
       .setAngle(0)
       .setVisible(true);
-    this.showRunningLayers();
+    this.player.play('runner-run');
     this.spawnTimer = 900;
     this.floaterCooldownMs = 0;
     this.jumpsUsed = 0;
@@ -392,7 +398,6 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.updatePlayerAnimation(grounded);
-    this.syncPlayerLegs();
     this.moveGroup(this.obstacles, current.speed, dt, -120);
     this.moveGroup(this.platforms, current.speed, dt, -140);
     this.moveGroup(this.coins, current.speed, dt, -80);
@@ -430,7 +435,6 @@ export class GameScene extends Phaser.Scene {
     if (completedRun) {
       this.gameEvents.onUpdate(snapshot.score, snapshot.coins, snapshot.best, snapshot.stage, 1, snapshot.retriesRemaining);
       this.time.delayedCall(500, () => {
-        this.playerLegs.stop().setVisible(false);
         this.player.setVisible(false);
         this.gameEvents.onComplete(snapshot.score, snapshot.coins);
       });
@@ -535,35 +539,14 @@ export class GameScene extends Phaser.Scene {
     const velocityY = this.player.body!.velocity.y;
     if (grounded && Math.abs(velocityY) < 40) {
       this.player.setAngle(0);
-      if (!this.playerLegs.visible) this.showRunningLayers();
-      if (this.playerLegs.anims.currentAnim?.key !== 'runner-run' || !this.playerLegs.anims.isPlaying) {
-        this.playerLegs.play('runner-run');
+      if (this.player.anims.currentAnim?.key !== 'runner-run' || !this.player.anims.isPlaying) {
+        this.player.play('runner-run');
       }
       return;
     }
 
-    this.playerLegs.stop().setVisible(false);
-    this.player.setCrop().setFrame(velocityY < 0 ? '6' : '7');
+    this.player.stop().setFrame(velocityY < 0 ? '6' : '7');
     this.player.setAngle(Phaser.Math.Clamp(velocityY * 0.006, -4, 6));
-  }
-
-  private showRunningLayers(): void {
-    this.player.stop().setFrame('0').setCrop(0, 0, this.runnerFrameWidth, this.upperBodyCutoff);
-    this.playerLegs
-      .setFrame('0')
-      .setCrop(0, this.upperBodyCutoff, this.runnerFrameWidth, this.runnerFrameHeight - this.upperBodyCutoff)
-      .setVisible(true)
-      .play('runner-run');
-    this.syncPlayerLegs();
-  }
-
-  private syncPlayerLegs(): void {
-    if (!this.playerLegs.visible) return;
-    this.playerLegs
-      .setPosition(this.player.x, this.player.y)
-      .setScale(this.player.scaleX, this.player.scaleY)
-      .setAngle(this.player.angle)
-      .setAlpha(this.player.alpha);
   }
 
   private canCollideWithGround(): boolean {
@@ -624,8 +607,7 @@ export class GameScene extends Phaser.Scene {
     this.runState.end();
     const snapshot = this.runState.snapshot();
     this.tweens.killTweensOf(this.player);
-    this.playerLegs.stop().setVisible(false);
-    this.player.stop().setCrop().setFrame('7').setAngularVelocity(0);
+    this.player.stop().setFrame('7').setAngularVelocity(0);
     this.cameras.main.shake(180, 0.006);
     this.playTone(85, 0.3, 'sawtooth');
     this.stopBgm();
@@ -807,8 +789,7 @@ export class GameScene extends Phaser.Scene {
     this.runState.end();
     const snapshot = this.runState.snapshot();
     this.tweens.killTweensOf(this.player);
-    this.playerLegs.stop().setVisible(false);
-    this.player.stop().setCrop().setFrame('7').setScale(this.playerBaseScaleX, this.playerBaseScaleY);
+    this.player.stop().setFrame('7').setScale(this.playerBaseScaleX, this.playerBaseScaleY);
     this.player.setVelocity(0, -380).setAngularVelocity(240);
     this.cameras.main.shake(260, 0.012);
     this.playTone(130, 0.2, 'sawtooth');
