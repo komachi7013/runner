@@ -47,6 +47,8 @@ let scene: GameScene;
 let soundEnabled = true;
 let paused = false;
 let canRetryStage = false;
+const portraitPhone = window.matchMedia('(orientation: portrait) and (pointer: coarse)');
+let pausedForOrientation = false;
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -137,7 +139,22 @@ function setPaused(nextPaused: boolean): void {
   pauseButton.setAttribute('aria-pressed', String(paused));
 }
 
+function syncOrientation(): void {
+  if (portraitPhone.matches) {
+    if (scene?.isRunning() && !paused) {
+      setPaused(true);
+      pausedForOrientation = true;
+    }
+  } else if (pausedForOrientation) {
+    pausedForOrientation = false;
+    setPaused(false);
+  }
+  game.scale.refresh();
+}
+
 function beginRun(): void {
+  if (portraitPhone.matches) return;
+  pausedForOrientation = false;
   if (paused) setPaused(false);
   startPanel.classList.remove('visible');
   gameoverPanel.classList.remove('visible');
@@ -153,6 +170,7 @@ function beginRun(): void {
 }
 
 function retry(): void {
+  if (portraitPhone.matches) return;
   if (!canRetryStage) {
     beginRun();
     return;
@@ -171,6 +189,8 @@ retryButton.addEventListener('click', retry, { signal: eventController.signal })
 document.querySelector('#complete-retry-button')?.addEventListener('click', beginRun, { signal: eventController.signal });
 pauseButton.addEventListener('click', () => setPaused(!paused), { signal: eventController.signal });
 resumeButton.addEventListener('click', () => setPaused(false), { signal: eventController.signal });
+portraitPhone.addEventListener('change', syncOrientation, { signal: eventController.signal });
+window.addEventListener('resize', () => game.scale.refresh(), { signal: eventController.signal });
 
 soundButton.addEventListener('click', () => {
   soundEnabled = !soundEnabled;
