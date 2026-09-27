@@ -1,0 +1,24 @@
+{
+  "map_mode": "side_scroll_mode",
+  "engine_target": "Phaser",
+  "stage_canvas": [1280, 720],
+  "background_source_size": [1672, 941],
+  "background_display_size": [1280, 720],
+  "background_anchor": [0.5, 0.5],
+  "background_scroll_factor": 0,
+  "background_repeat": "none",
+  "foreground_source_size": [1672, 190],
+  "foreground_display_size": [1280, 145],
+  "foreground_scroll_factor": 0.16,
+  "foreground_repeat": "horizontal; mirrored source halves meet pixel-for-pixel at both edges",
+  "foreground_build": "scripts/build_foreground_strips.py crops and mirrors generated scenery plates",
+  "platform_strategy": "runtime_physics_objects",
+  "collision_source": "GameScene groundCollider, hole spans and Arcade platform bodies",
+  "camera_bounds": [0, 0, 1280, 720],
+  "spawn_marker": [225, 543],
+  "stages": [
+    { "id": 1, "theme": "flower_meadow", "scenery": "stage-1-meadow.png", "foreground": "stage-1-foreground.png", "ground": "ground-1", "hole_width": [125, 165], "floating_platform_heights": [115, 130], "hazards": ["spike", "hole"] },
+    { "id": 2, "theme": "sky_highland", "scenery": "stage-2-highland.png", "foreground": "stage-2-foreground.png", "ground": "ground-2", "hole_width": [155, 205], "floating_platform_heights": [125, 150, 175], "hazards": ["spike", "hole"] },
+    { "id": 3, "theme": "moon_and_stars", "scenery": "stage-3-moonlight.png", "foreground": "stage-3-foreground.png", "ground": "ground-3", "hole_width": [180, 235], "floating_platform_heights": [145, 175, 205], "hazards": ["spike", "hole", "lightning"] }
+  ]
+}
