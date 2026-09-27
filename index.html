@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#101535" />
+    <meta name="description" content="ジャンプで遺跡を駆け抜ける2Dアクションゲーム" />
+    <title>Skybound Sprint</title>
+  </head>
+  <body>
+    <main id="app">
+      <div id="game" aria-label="Skybound Sprint ゲーム画面"></div>
+      <section id="hud" aria-live="polite">
+        <div class="brand"><span>SKYBOUND</span><strong>SPRINT</strong></div>
+        <div class="stats">
+          <div><small>STAGE</small><strong id="stage">1 / 3</strong></div>
+          <div><small>SCORE</small><strong id="score">00000</strong></div>
+          <div><small>COINS</small><strong id="coins">00</strong></div>
+          <div><small>RETRY</small><strong id="retries">3</strong></div>
+          <div class="best"><small>BEST</small><strong id="best">00000</strong></div>
+        </div>
+      </section>
+      <div id="course-progress" aria-label="コース進行度"><span></span></div>
+      <div id="stage-banner" role="status"></div>
+      <section id="start-panel" class="panel visible">
+        <p class="eyebrow">A TINY SKY ADVENTURE</p>
+        <h1>空を、跳べ。</h1>
+        <p>2段ジャンプで障害物をかわし、光のコインを集めよう。</p>
+        <button id="start-button">走り出す <span>→</span></button>
+        <p class="controls"><kbd>SPACE</kbd> / <kbd>↑</kbd> / 画面タップを空中でもう一度で2段ジャンプ</p>
+      </section>
+      <section id="gameover-panel" class="panel">
+        <p class="eyebrow">GAME OVER</p>
+        <h2 id="gameover-title">この面の最初から再挑戦</h2>
+        <div class="result"><span>スコア</span><strong id="final-score">0</strong></div>
+        <p id="final-coins">コイン 0 枚</p>
+        <p id="gameover-message">残り3回。スコアとコインは面の開始時点に戻ります。</p>
+        <button id="retry-button">この面をやり直す <span>↻</span></button>
+      </section>
+      <section id="complete-panel" class="panel">
+        <p class="eyebrow">ALL STAGES COMPLETE</p>
+        <h2 id="complete-title">全3面 走破！</h2>
+        <img id="complete-image" class="complete-image" src="/assets/results/runner-victory.png" alt="汗をかきながら走破を喜ぶランナー" />
+        <p id="complete-message" class="complete-message">目標スコア達成！</p>
+        <div class="result"><span>スコア</span><strong id="complete-score">0</strong></div>
+        <p id="complete-coins">コイン 0 枚</p>
+        <button id="complete-retry-button">1面から再挑戦 <span>↻</span></button>
+      </section>
+      <section id="pause-panel" class="panel pause-panel">
+        <p class="eyebrow">PAUSED</p>
+        <h2>ひと休み</h2>
+        <p>準備ができたら、続きを走ろう。</p>
+        <button id="resume-button">再開する <span>▶</span></button>
+        <p class="controls"><kbd>P</kbd> / <kbd>ESC</kbd> でも再開</p>
+      </section>
+      <button id="pause-button" aria-label="一時停止" aria-pressed="false" disabled>Ⅱ</button>
+      <button id="sound-button" aria-label="サウンド切り替え">♪</button>
+      <div id="jump-hint">TAP TWICE TO DOUBLE JUMP</div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
