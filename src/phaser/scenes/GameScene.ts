@@ -48,6 +48,9 @@ export class GameScene extends Phaser.Scene {
   private storms: StormHazard[] = [];
   private holes: HoleVisual[] = [];
   private groundTiles: Phaser.GameObjects.TileSprite[] = [];
+  private scenery!: Phaser.GameObjects.Image;
+  private foreground!: Phaser.GameObjects.TileSprite;
+  private groundEdge!: Phaser.GameObjects.Rectangle;
   private groundCollider!: Phaser.GameObjects.Rectangle;
   private clouds: Phaser.GameObjects.Image[] = [];
   private spawnTimer = 0;
@@ -90,6 +93,12 @@ export class GameScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image('runner-source', '/assets/characters/runner-girl-run-jump-sheet.png');
+    this.load.image('stage-1-scenery', '/assets/map/stage-1-meadow.png');
+    this.load.image('stage-2-scenery', '/assets/map/stage-2-highland.png');
+    this.load.image('stage-3-scenery', '/assets/map/stage-3-moonlight.png');
+    this.load.image('stage-1-foreground', '/assets/map/stage-1-foreground.png');
+    this.load.image('stage-2-foreground', '/assets/map/stage-2-foreground.png');
+    this.load.image('stage-3-foreground', '/assets/map/stage-3-foreground.png');
   }
 
   create(): void {
@@ -141,28 +150,35 @@ export class GameScene extends Phaser.Scene {
     g.fillStyle(0xe6a72e).fillRect(13, 7, 4, 16);
     g.generateTexture('coin', 30, 30).clear();
 
-    g.fillStyle(0xb75683).fillTriangle(0, 62, 25, 0, 50, 62);
-    g.fillStyle(0xff9abd).fillTriangle(8, 62, 25, 14, 34, 62);
-    g.lineStyle(3, 0xffd2e2, 0.95).strokeTriangle(0, 62, 25, 0, 50, 62);
+    g.fillStyle(0xffffff).fillTriangle(0, 62, 25, 0, 50, 62);
+    g.fillStyle(0xe6e6e6).fillTriangle(8, 62, 25, 14, 34, 62);
+    g.lineStyle(3, 0xffffff, 0.95).strokeTriangle(0, 62, 25, 0, 50, 62);
     g.generateTexture('spike', 50, 62).clear();
 
-    g.fillStyle(0x5869b5).fillRoundedRect(0, 0, 70, 82, 8);
-    g.fillStyle(0xb6c3ff).fillRect(8, 9, 54, 10);
-    g.fillStyle(0x313d7a).fillRect(10, 64, 50, 18);
-    g.lineStyle(3, 0xdce2ff, 0.9).strokeRoundedRect(1, 1, 68, 80, 8);
+    g.fillStyle(0xffffff).fillRoundedRect(0, 0, 70, 82, 8);
+    g.fillStyle(0xe8e8e8).fillRoundedRect(8, 9, 54, 10, 5);
+    g.fillStyle(0xd0d0d0).fillRoundedRect(10, 64, 50, 18, 5);
+    g.lineStyle(3, 0xffffff, 0.9).strokeRoundedRect(1, 1, 68, 80, 8);
     g.generateTexture('block', 70, 82).clear();
 
-    g.fillStyle(0x784a8e).fillRoundedRect(0, 0, 106, 48, 18);
-    g.fillStyle(0xb781cf).fillRoundedRect(10, 8, 86, 10, 5);
-    g.fillStyle(0xff8eb5).fillCircle(20, 34, 5).fillCircle(86, 34, 5);
-    g.lineStyle(3, 0xf5c8ff, 0.8).strokeRoundedRect(3, 3, 100, 42, 16);
+    g.fillStyle(0xffffff).fillRoundedRect(0, 0, 106, 48, 18);
+    g.fillStyle(0xe4e4e4).fillRoundedRect(10, 8, 86, 10, 5);
+    g.fillStyle(0xf5f5f5).fillCircle(20, 34, 5).fillCircle(86, 34, 5);
+    g.lineStyle(3, 0xffffff, 0.9).strokeRoundedRect(3, 3, 100, 42, 16);
     g.generateTexture('floater', 106, 48).clear();
 
-    g.fillStyle(0x333f73).fillRect(0, 0, 128, 130);
-    g.fillStyle(0x536096).fillRect(0, 0, 128, 10);
-    g.lineStyle(2, 0x242f60, 0.7);
-    for (let x = 0; x < 128; x += 32) g.lineBetween(x, 10, x, 130);
-    g.generateTexture('ground', 128, 130).clear();
+    const grounds = [
+      { name: 'ground-1', soil: 0xcaa579, grass: 0x82c977, trim: 0xa8df84 },
+      { name: 'ground-2', soil: 0xb59377, grass: 0x6bb789, trim: 0x9cdb91 },
+      { name: 'ground-3', soil: 0x64618f, grass: 0x78a6a9, trim: 0xa8cbd1 },
+    ];
+    grounds.forEach(({ name, soil, grass, trim }) => {
+      g.fillStyle(soil).fillRect(0, 0, 128, 130);
+      g.fillStyle(grass).fillRect(0, 0, 128, 21);
+      g.fillStyle(trim).fillRect(0, 0, 128, 7);
+      g.fillStyle(0xffffff, 0.13).fillCircle(24, 53, 5).fillCircle(94, 95, 7);
+      g.generateTexture(name, 128, 130).clear();
+    });
 
     g.fillStyle(0xffffff, 0.14).fillCircle(48, 24, 22).fillCircle(76, 20, 30).fillCircle(104, 28, 19).fillRoundedRect(40, 25, 82, 25, 14);
     g.generateTexture('cloud', 140, 60).clear();
@@ -200,37 +216,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createWorld(): void {
-    this.cameras.main.setBackgroundColor('#101535');
-
-    const sky = this.add.graphics().setDepth(-20);
-    sky.fillGradientStyle(0x101535, 0x101535, 0x7f5d89, 0x7f5d89, 1);
-    sky.fillRect(0, 0, VIEW_W, GROUND_Y);
-
-    for (let i = 0; i < 42; i++) {
-      this.add.circle(Phaser.Math.Between(0, VIEW_W), Phaser.Math.Between(25, 430), Phaser.Math.Between(1, 2), 0xffffff, Phaser.Math.FloatBetween(0.15, 0.65)).setDepth(-18);
-    }
-
-    const moon = this.add.circle(1040, 145, 76, 0xffe5b1, 0.92).setDepth(-17);
-    this.add.circle(1012, 126, 70, 0xb8879c, 0.28).setDepth(-16);
-    moon.setStrokeStyle(5, 0xfff2ce, 0.14);
-
-    const far = this.add.graphics().setDepth(-10);
-    far.fillStyle(0x252b5a, 0.85);
-    for (let x = -50; x < VIEW_W + 100; x += 115) {
-      const h = Phaser.Math.Between(90, 220);
-      far.fillTriangle(x, GROUND_Y, x + 65, GROUND_Y - h, x + 140, GROUND_Y);
-    }
-
-    for (let i = 0; i < 5; i++) {
-      const cloud = this.add.image(i * 310 + 50, Phaser.Math.Between(120, 390), 'cloud').setScale(Phaser.Math.FloatBetween(0.8, 1.5)).setDepth(-9);
-      this.clouds.push(cloud);
-    }
-
-    const ground = this.add.tileSprite(VIEW_W / 2, GROUND_Y + 65, VIEW_W, 130, 'ground');
+    this.scenery = this.add.image(VIEW_W / 2, VIEW_H / 2, 'stage-1-scenery').setDisplaySize(VIEW_W, VIEW_H).setDepth(-20);
+    const stripHeight = 190 * VIEW_H / this.textures.get('stage-1-scenery').getSourceImage().height;
+    this.foreground = this.add.tileSprite(VIEW_W / 2, GROUND_Y - stripHeight / 2, VIEW_W, stripHeight, 'stage-1-foreground').setDepth(-10);
+    this.foreground.setTileScale(VIEW_H / this.textures.get('stage-1-scenery').getSourceImage().height);
+    const ground = this.add.tileSprite(VIEW_W / 2, GROUND_Y + 65, VIEW_W, 130, 'ground-1');
     ground.setDepth(5);
     this.groundTiles.push(ground);
 
-    const edge = this.add.rectangle(VIEW_W / 2, GROUND_Y - 2, VIEW_W, 5, 0xa8b4ff, 0.5).setDepth(6);
+    this.groundEdge = this.add.rectangle(VIEW_W / 2, GROUND_Y - 2, VIEW_W, 5, 0xa8df84, 0.9).setDepth(6);
     this.groundCollider = this.add.rectangle(VIEW_W / 2, GROUND_Y + 12, VIEW_W, 24, 0x000000, 0);
     this.physics.add.existing(this.groundCollider, true);
   }
@@ -261,6 +255,17 @@ export class GameScene extends Phaser.Scene {
       undefined,
       () => this.canCollideWithGround(),
     );
+  }
+
+  private applyStageTheme(): void {
+    const stage = this.runState.snapshot().stage;
+    const sceneryKey = `stage-${stage}-scenery`;
+    this.scenery.setTexture(sceneryKey);
+    this.foreground.setTexture(`stage-${stage}-foreground`);
+    this.foreground.tilePositionX = 0;
+    this.groundTiles.forEach((tile) => tile.setTexture(`ground-${stage}`));
+    this.groundEdge.setFillStyle([0xa8df84, 0xa1de9b, 0xc4e1e3][stage - 1], 0.9);
+    this.cameras.main.setBackgroundColor(['#a5e3f2', '#78c4ec', '#5b69b6'][stage - 1]);
   }
 
   private createRunnerTexture(): void {
@@ -329,6 +334,7 @@ export class GameScene extends Phaser.Scene {
     this.lastSnapshotScore = -1;
     this.stageTransitioning = false;
     this.finishCorridorPrepared = false;
+    this.applyStageTheme();
     this.playTone(440, 0.08, 'sine');
     this.startBgm();
     const snapshot = this.runState.snapshot();
@@ -359,6 +365,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     this.groundTiles.forEach((tile) => { tile.tilePositionX += current.speed * dt; });
+    this.foreground.tilePositionX += current.speed * dt * 0.16;
 
     const grounded = this.player.body?.blocked.down ?? false;
     if (grounded) this.jumpsUsed = 0;
@@ -435,6 +442,7 @@ export class GameScene extends Phaser.Scene {
       this.goalLine?.destroy();
       this.goalLine = undefined;
       this.runState.advanceStage();
+      this.applyStageTheme();
       this.stageTransitioning = false;
       this.finishCorridorPrepared = false;
       this.spawnTimer = 900;
@@ -589,11 +597,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnHolePattern(x: number): void {
-    const width = Phaser.Math.Between(170, 245);
-    const abyss = this.add.rectangle(0, 65, width, 134, 0x07091c);
-    const inner = this.add.rectangle(0, 10, width - 18, 22, 0x111535);
-    const leftRim = this.add.rectangle(-width / 2 + 4, 15, 8, 30, 0xa8b4ff, 0.85);
-    const rightRim = this.add.rectangle(width / 2 - 4, 15, 8, 30, 0xa8b4ff, 0.85);
+    const stage = this.runState.snapshot().stage;
+    const [minWidth, maxWidth] = ([[125, 165], [155, 205], [180, 235]] as const)[stage - 1];
+    const width = Phaser.Math.Between(minWidth, maxWidth);
+    const abyss = this.add.rectangle(0, 65, width, 134, [0x7bbaa2, 0x6e9fa9, 0x242a59][stage - 1]);
+    const inner = this.add.rectangle(0, 10, width - 18, 22, [0x9bd4a5, 0x88c3ad, 0x464b86][stage - 1]);
+    const rimColor = [0xa8df84, 0x9cdb91, 0xa8cbd1][stage - 1];
+    const leftRim = this.add.rectangle(-width / 2 + 4, 15, 8, 30, rimColor, 0.95);
+    const rightRim = this.add.rectangle(width / 2 - 4, 15, 8, 30, rimColor, 0.95);
     const container = this.add.container(x, GROUND_Y, [abyss, inner, leftRim, rightRim]).setDepth(7);
     this.holes.push({ container, width });
 
@@ -626,13 +637,14 @@ export class GameScene extends Phaser.Scene {
 
   private spawnPattern(speed: number): void {
     const x = VIEW_W + 90;
-    if (Phaser.Math.Between(0, 100) < 18) {
+    const stage = this.runState.snapshot().stage;
+    if (stage === 3 && Phaser.Math.Between(0, 100) < 13) {
       this.spawnStormPattern(x);
       return;
     }
     // A spawn tick owns one exclusive ground pattern. Returning here is the
     // invariant that prevents a spike from sharing a hole's horizontal span.
-    if (Phaser.Math.Between(0, 100) < 22) {
+    if (Phaser.Math.Between(0, 100) < [12, 18, 24][stage - 1]) {
       this.spawnHolePattern(x);
       return;
     }
@@ -640,20 +652,22 @@ export class GameScene extends Phaser.Scene {
       const platform = child as Phaser.Physics.Arcade.Image;
       return platform.active && platform.texture.key === 'floater';
     });
-    const useFloater = !hasActiveFloater && this.floaterCooldownMs <= 0 && Phaser.Math.Between(0, 100) < 28;
+    const useFloater = !hasActiveFloater && this.floaterCooldownMs <= 0 && Phaser.Math.Between(0, 100) < [22, 35, 43][stage - 1];
     let floaterY: number | undefined;
     if (useFloater) {
-      floaterY = GROUND_Y - Phaser.Math.RND.pick([124, 142, 160]);
+      floaterY = GROUND_Y - Phaser.Math.RND.pick(stage === 1 ? [115, 130] : stage === 2 ? [125, 150, 175] : [145, 175, 205]);
       const floater = this.platforms.create(x, floaterY, 'floater') as Phaser.Physics.Arcade.Image;
       floater
         .setDepth(8)
         .setBodySize(94, 38);
-      this.floaterCooldownMs = 4800;
+      floater.setTint([0x9fdf95, 0x83d0a0, 0xb7c4f5][stage - 1]);
+      this.floaterCooldownMs = [4800, 4000, 3400][stage - 1];
     } else {
       const useBlock = Phaser.Math.Between(0, 100) < 35;
       const group = useBlock ? this.platforms : this.obstacles;
       const obstacle = group.create(x, GROUND_Y - (useBlock ? 41 : 31), useBlock ? 'block' : 'spike') as Phaser.Physics.Arcade.Image;
       obstacle.setDepth(8).setBodySize(useBlock ? 58 : 34, useBlock ? 74 : 48);
+      obstacle.setTint(useBlock ? [0xb8d990, 0x8ac7a1, 0xaaa8d9][stage - 1] : [0xffc1d0, 0xffa9bd, 0xffb5dd][stage - 1]);
     }
 
     const count = Phaser.Math.Between(3, 6);
