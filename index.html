@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#101535" />
     <meta name="description" content="ジャンプで遺跡を駆け抜ける2Dアクションゲーム" />
-    <title>Skybound Sprint</title>
+    <title>空を跳べ</title>
   </head>
   <body>
     <main id="app">
@@ -24,7 +24,7 @@
       <section id="start-panel" class="panel visible" aria-labelledby="start-title">
         <div class="start-content">
           <p class="eyebrow">A TINY SKY ADVENTURE</p>
-          <h1 id="start-title">空を、跳べ。</h1>
+          <h1 id="start-title">空を跳べ</h1>
           <p>丘の向こうへ駆け出そう。2段ジャンプで障害物をかわし、光のコインを集めよう。</p>
           <button id="start-button">走り出す <span>→</span></button>
           <p class="controls"><kbd>SPACE</kbd> / <kbd>↑</kbd> / 画面タップを空中でもう一度で2段ジャンプ</p>
@@ -33,6 +33,7 @@
       <section id="gameover-panel" class="panel">
         <p class="eyebrow">GAME OVER</p>
         <h2 id="gameover-title">この面の最初から再挑戦</h2>
+        <img id="gameover-image" class="complete-image" src="/assets/results/runner-retry.png" alt="拳を握って再挑戦を決意するランナー" />
         <div class="result"><span>スコア</span><strong id="final-score">0</strong></div>
         <p id="final-coins">コイン 0 枚</p>
         <p id="gameover-message">残り3回。スコアとコインは面の開始時点に戻ります。</p>
