@@ -119,6 +119,16 @@ const game = new Phaser.Game({
 });
 window.__skyboundSprintGame = game;
 
+function keepGroundVisible(): void {
+  const parent = document.querySelector<HTMLElement>('#game')!;
+  const clippedHeight = Math.max(0, game.canvas.getBoundingClientRect().height - parent.clientHeight);
+  game.canvas.style.marginTop = `${-clippedHeight}px`;
+  game.scale.updateBounds();
+}
+
+game.scale.on(Phaser.Scale.Events.RESIZE, keepGroundVisible);
+keepGroundVisible();
+
 function finishUiState(): void {
   jumpHint.classList.remove('visible');
   paused = false;
@@ -196,6 +206,7 @@ pauseButton.addEventListener('click', () => setPaused(!paused), { signal: eventC
 resumeButton.addEventListener('click', () => setPaused(false), { signal: eventController.signal });
 portraitPhone.addEventListener('change', syncOrientation, { signal: eventController.signal });
 window.addEventListener('resize', () => game.scale.refresh(), { signal: eventController.signal });
+window.visualViewport?.addEventListener('resize', () => game.scale.refresh(), { signal: eventController.signal });
 
 soundButton.addEventListener('click', () => {
   soundEnabled = !soundEnabled;
