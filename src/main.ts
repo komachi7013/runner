@@ -35,6 +35,7 @@ const completeCoins = document.querySelector('#complete-coins')!;
 const finalScore = document.querySelector('#final-score')!;
 const finalCoins = document.querySelector('#final-coins')!;
 const gameoverTitle = document.querySelector('#gameover-title')!;
+const gameoverImage = document.querySelector<HTMLImageElement>('#gameover-image')!;
 const gameoverMessage = document.querySelector('#gameover-message')!;
 const retryButton = document.querySelector<HTMLButtonElement>('#retry-button')!;
 const soundButton = document.querySelector<HTMLButtonElement>('#sound-button')!;
@@ -61,7 +62,7 @@ const game = new Phaser.Game({
     arcade: { debug: false },
   },
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.ENVELOP,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   scene: GameScene,
@@ -101,6 +102,10 @@ const game = new Phaser.Game({
           finalCoins.textContent = `コイン ${coins} 枚`;
           canRetryStage = retriesRemaining > 0;
           gameoverTitle.textContent = canRetryStage ? `${stage}面の最初から再挑戦` : 'リトライを使い切りました';
+          gameoverImage.src = canRetryStage ? '/assets/results/runner-retry.png' : '/assets/results/runner-gameover.png';
+          gameoverImage.alt = canRetryStage
+            ? '拳を握って再挑戦を決意するランナー'
+            : 'ゴールに届かず、道に膝をついて悔しがるランナー';
           gameoverMessage.textContent = canRetryStage
             ? `残り${retriesRemaining}回。スコアとコインは面の開始時点に戻ります。`
             : '次は1面から新しく挑戦します。';

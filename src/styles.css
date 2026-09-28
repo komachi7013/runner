@@ -17,7 +17,7 @@ body { background: radial-gradient(circle at 50% 30%, #242651, #090c22 70%); }
 #app { touch-action: manipulation; }
 
 #app { position: relative; isolation: isolate; }
-#game { position: absolute; inset: 0; }
+#game { position: absolute; inset: 0; overflow: hidden; }
 #game canvas { display: block; }
 
 #hud {
@@ -66,6 +66,7 @@ body { background: radial-gradient(circle at 50% 30%, #242651, #090c22 70%); }
   z-index: 7;
   width: 100%;
   height: 100%;
+  max-height: none;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -164,8 +165,8 @@ kbd { padding: 3px 7px; border: 1px solid rgba(255,255,255,.25); border-radius: 
   #start-panel h1 { margin: 3px 0; font-size: clamp(28px, 8vh, 46px); }
   #start-panel .start-content > p:not(.eyebrow) { margin: 5px 0; font-size: clamp(11px, 2.7vh, 14px); line-height: 1.35; }
   #start-panel .controls { font-size: 9px !important; line-height: 1.3; }
-  #sound-button, #pause-button { bottom: max(8px, env(safe-area-inset-bottom)); right: max(10px, env(safe-area-inset-right)); width: 36px; height: 36px; }
-  #pause-button { right: calc(max(10px, env(safe-area-inset-right)) + 44px); }
+  #sound-button, #pause-button { bottom: max(8px, env(safe-area-inset-bottom)); right: max(10px, env(safe-area-inset-right)); width: 44px; height: 44px; }
+  #pause-button { right: calc(max(10px, env(safe-area-inset-right)) + 52px); }
   #jump-hint { bottom: 5%; }
 }
 
