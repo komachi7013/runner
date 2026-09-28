@@ -160,6 +160,21 @@ kbd { padding: 3px 7px; border: 1px solid rgba(255,255,255,.25); border-radius: 
   .result strong { font-size: 26px; }
   #complete-panel { width: min(540px, calc(100vw - 24px)); padding: 10px 16px; }
   .complete-image { max-height: 20vh; width: min(210px, 40vw); margin: 5px auto; }
+  #gameover-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 34%) minmax(0, 1fr);
+    column-gap: 16px;
+    align-items: center;
+    width: min(760px, calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+    max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    padding: 10px 16px;
+    text-align: left;
+  }
+  #gameover-panel > :not(img) { grid-column: 2; }
+  #gameover-panel .complete-image { grid-column: 1; grid-row: 1 / span 6; width: 100%; max-height: min(62dvh, 220px); margin: 0; }
+  #gameover-panel h2 { margin: 0; }
+  #gameover-panel .result { justify-content: flex-start; margin-top: 0; }
+  #gameover-panel button { justify-self: start; min-height: 44px; margin: 2px 0 0; }
   #start-panel { width: 100%; max-height: 100%; padding: 0; border-radius: 0; background-position: 42% center; }
   .start-content { top: 50%; right: max(16px, env(safe-area-inset-right)); bottom: auto; left: auto; width: min(390px, 48vw); transform: translateY(-50%); }
   #start-panel h1 { margin: 3px 0; font-size: clamp(28px, 8vh, 46px); }
