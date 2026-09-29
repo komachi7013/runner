@@ -1,0 +1,120 @@
+{
+  "target": "asset",
+  "mode": "single",
+  "prompt": "Use case: stylized-concept. Create exactly ONE isolated 2D side-scrolling game prop: a small floating grass-topped stone platform, suitable for a runner jumping onto it. Single asset, one view, no variants, no sheet. Classic late-1970s to 1980s Japanese cel-animation adventure aesthetic: expressive dark warm-brown ink contour with subtle hand-drawn variation, simple two-tone cel shadows, gentle gouache surface texture, muted sage green grass, golden cream highlights, warm ochre stone and subdued lavender-brown shadows. Clean HD illustration, not pixel art, not 3D. Side-on orthographic view; wide rectangular silhouette approximately 2.2:1. Straight horizontal readable grass landing edge, thin grass lip over a chunky single stone slab, two or three broad angular cracks, a few short attached grass tufts at the corners. The stone underside is gently irregular but mostly flat. No falling stones, no floating particles, no flowers, no characters, no face, no scenery, no floor, no cast shadow outside the prop, no text, no UI. Center the whole prop in the canvas with generous padding on every side. Crisp readable silhouette at a final in-game size of 106 by 48 pixels. Background must be completely flat solid #FF00FF magenta for later deterministic chroma-key extraction; no magenta anywhere in the subject. This is one approval concept only; do not include any other objects.",
+  "role": "",
+  "input": "/Users/komachi/.codex/generated_images/01a0ed5b-7930-79d3-8502-a6a28d134a41/exec-92a35767-709f-42a8-bc34-973c245c4989.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 1,
+  "cols": 1,
+  "cell_size": 1536,
+  "fit_scale": 0.9,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "center",
+  "shared_scale": false,
+  "scale_strategy": "fit",
+  "component_mode": "largest",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "single-1"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        1860,
+        846
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 355580,
+      "selected_component_bbox": [
+        256,
+        233,
+        1581,
+        574
+      ],
+      "crop_bbox": [
+        256,
+        233,
+        1581,
+        574
+      ],
+      "source_frame_size": [
+        1852,
+        838
+      ],
+      "is_empty": false,
+      "subject_area": 355580,
+      "body_core_area": 277449,
+      "body_area_fraction": 0.17877145007397022,
+      "anchor_source": [
+        918.5,
+        403.5
+      ],
+      "source_edge_touch": false,
+      "output_edge_touch": false,
+      "edge_touch": false,
+      "output_size": [
+        1382,
+        355
+      ],
+      "paste_position": [
+        77,
+        590
+      ],
+      "paste_clamped": false,
+      "aligned_bbox": [
+        77,
+        590,
+        1459,
+        945
+      ],
+      "source_to_output_scale": 1.0433207547169812,
+      "bbox_scale_applied": true,
+      "scale_strategy": "fit",
+      "scale_changed": true
+    }
+  ],
+  "edge_touch_frames": [],
+  "source_edge_touch_frames": [],
+  "output_edge_touch_frames": [],
+  "empty_frames": [],
+  "paste_clamped_frames": [],
+  "qc_summary": {
+    "frame_count": 1,
+    "valid_frame_count": 1,
+    "empty_count": 0,
+    "edge_touch_count": 0,
+    "paste_clamped_count": 0,
+    "body_scale_mean": 0.42281372976048237,
+    "output_subject_height_mean": 355.0,
+    "body_scale_cv": 0.0,
+    "anchor_x_std": 0.0,
+    "anchor_y_std": 0.0,
+    "anchor_y_mean": 0.4815035799522673
+  },
+  "qc_config": {
+    "strict_qc": true,
+    "reject_edge_touch": false,
+    "allow_source_edge_touch": false,
+    "max_body_scale_cv": null,
+    "max_anchor_y_std": null,
+    "max_profile_scale_drift": null
+  },
+  "approval_status": "approved_by_user",
+  "final_asset": "prop.png",
+  "final_cleanup": "imagegen remove_chroma_key.py --soft-matte --despill; alpha-bound crop with 20px padding",
+  "runtime_integrated": true,
+  "runtime_asset": "../../../public/assets/props/retro/floater.png"
+}

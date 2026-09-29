@@ -1,0 +1,169 @@
+{
+  "style": "retro hand-painted cel animation",
+  "generator": "built-in image_gen",
+  "props": {
+    "spike": {
+      "image": "spike.png",
+      "prompt": "spike.prompt.txt",
+      "source": "../../../../art/props/retro-set/spike-clean.png",
+      "sourceCrop": [
+        300,
+        141,
+        827,
+        1254
+      ],
+      "textureSize": [
+        50,
+        62
+      ],
+      "role": "hazard",
+      "depth": 8,
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "collisionSize": [
+        34,
+        48
+      ],
+      "collisionOffset": [
+        8.0,
+        7.0
+      ],
+      "repeat": "none",
+      "qc": {
+        "alpha": true,
+        "sourceEdgeTouch": false,
+        "outputEdgeTouch": false
+      }
+    },
+    "block": {
+      "image": "block.png",
+      "prompt": "block.prompt.txt",
+      "source": "../../../../art/props/retro-set/block-clean.png",
+      "sourceCrop": [
+        227,
+        292,
+        932,
+        1067
+      ],
+      "textureSize": [
+        70,
+        82
+      ],
+      "role": "solid_platform",
+      "depth": 8,
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "collisionSize": [
+        58,
+        74
+      ],
+      "collisionOffset": [
+        6.0,
+        4.0
+      ],
+      "repeat": "none",
+      "qc": {
+        "alpha": true,
+        "sourceEdgeTouch": false,
+        "outputEdgeTouch": false
+      }
+    },
+    "floater": {
+      "image": "floater.png",
+      "prompt": "floater.prompt.txt",
+      "source": "../../../../art/props/retro-set/floater-clean.png",
+      "sourceCrop": [
+        259,
+        236,
+        1586,
+        578
+      ],
+      "textureSize": [
+        106,
+        48
+      ],
+      "role": "solid_platform",
+      "depth": 8,
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "collisionSize": [
+        94,
+        38
+      ],
+      "collisionOffset": [
+        6.0,
+        5.0
+      ],
+      "repeat": "none",
+      "qc": {
+        "alpha": true,
+        "sourceEdgeTouch": false,
+        "outputEdgeTouch": false
+      }
+    },
+    "storm-cloud": {
+      "image": "storm-cloud.png",
+      "prompt": "storm-cloud.prompt.txt",
+      "source": "../../../../art/props/retro-set/storm-cloud-clean.png",
+      "sourceCrop": [
+        199,
+        173,
+        1533,
+        726
+      ],
+      "textureSize": [
+        145,
+        76
+      ],
+      "role": "lightning_emitter",
+      "depth": 14,
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "collisionSize": null,
+      "collisionOffset": null,
+      "repeat": "none",
+      "qc": {
+        "alpha": true,
+        "sourceEdgeTouch": false,
+        "outputEdgeTouch": false
+      }
+    },
+    "goal": {
+      "image": "goal.png",
+      "prompt": "goal.prompt.txt",
+      "source": "../../../../art/props/retro-set/goal-clean.png",
+      "sourceCrop": [
+        52,
+        59,
+        1168,
+        1209
+      ],
+      "textureSize": [
+        180,
+        188
+      ],
+      "role": "stage_finish_visual",
+      "depth": 12,
+      "origin": [
+        0.5,
+        1
+      ],
+      "collisionSize": null,
+      "collisionOffset": null,
+      "repeat": "none",
+      "qc": {
+        "alpha": true,
+        "sourceEdgeTouch": false,
+        "outputEdgeTouch": false
+      }
+    }
+  }
+}

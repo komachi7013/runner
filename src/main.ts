@@ -216,7 +216,6 @@ soundButton.addEventListener('click', () => {
 }, { signal: eventController.signal });
 
 window.addEventListener('keydown', (event) => {
-  if (['Space', 'ArrowUp', 'KeyW'].includes(event.code)) event.preventDefault();
   if (['KeyP', 'Escape'].includes(event.code) && !startPanel.classList.contains('visible') && !gameoverPanel.classList.contains('visible') && !completePanel.classList.contains('visible')) {
     event.preventDefault();
     setPaused(!paused);
