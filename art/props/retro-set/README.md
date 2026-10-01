@@ -6,8 +6,8 @@ individually with built-in image_gen, using that approved image as a reference.
 
 Runtime PNGs, exact prompts and the size/collision manifest are saved in
 `public/assets/props/retro/`. `*-clean.png` files here retain the high-resolution
-art after soft chroma-key removal and despill. `*-trimmed.png` files preserve
-the cropped artwork before runtime normalization. `gameplay-preview.png` is a
+art after soft chroma-key removal and despill. Cropped intermediate images are
+computed in memory during normalization. `gameplay-preview.png` is a
 QA arrangement rendered by the actual game, not a background or a level layout.
 
 Run `python3 scripts/build_retro_props.py` from the project root with Pillow

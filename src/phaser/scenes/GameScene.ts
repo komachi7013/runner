@@ -9,16 +9,8 @@ const PIXELS_PER_DISTANCE = 10;
 const GOAL_APPROACH_CLEAR_DISTANCE = 50;
 const LIGHTNING_WARNING_SECONDS = 0.7;
 const LIGHTNING_GROUND_HIT_MARGIN = 12;
-const RUN_ANIMATION_FRAME_RATE = 14;
+const RUN_ANIMATION_FRAME_RATE = 12.5;
 const JUMP_BUFFER_SECONDS = 0.12;
-// Align each complete pose at the torso and waist. The second source row is
-// authored about 35px higher, so it also needs a shared vertical correction.
-const RUN_FRAME_OFFSETS: ReadonlyArray<readonly [number, number]> = [
-  [0, 0], [18, 0], [45, 0],
-  [1, 35], [21, 35], [48, 35],
-  // Keep the airborne torso aligned with the run cycle, not the tucked feet.
-  [18, 62], [43, 47],
-];
 
 interface GameEvents {
   onUpdate: (score: number, coins: number, best: number, stage: number, progress: number, retriesRemaining: number) => void;
@@ -97,7 +89,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image('runner-source', '/assets/characters/runner-girl-run-jump-sheet.png');
+    this.load.spritesheet('runner-run-frames', '/assets/characters/runner-girl-run-original-design.png', {
+      frameWidth: 418,
+      frameHeight: 418,
+      endFrame: 7,
+    });
+    this.load.spritesheet('runner-jump', '/assets/characters/runner-girl-jump-matched.png', { frameWidth: 418, frameHeight: 418, endFrame: 1 });
     this.load.image('stage-1-scenery', '/assets/map/stage-1-meadow.png');
     this.load.image('stage-2-scenery', '/assets/map/stage-2-highland.png');
     this.load.image('stage-3-scenery', '/assets/map/stage-3-moonlight.png');
@@ -155,8 +152,6 @@ export class GameScene extends Phaser.Scene {
 
   private createTextures(): void {
     const g = this.add.graphics();
-
-    this.createRunnerTexture();
 
     g.fillStyle(0xffd75e).fillCircle(15, 15, 14);
     g.lineStyle(3, 0xfff2aa).strokeCircle(15, 15, 10);
@@ -220,7 +215,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createPlayer(): void {
-    this.player = this.physics.add.sprite(225, GROUND_Y - 47, 'runner', '0').setDepth(11).setDisplaySize(94, 94);
+    this.player = this.physics.add.sprite(225, GROUND_Y - 47, 'runner-run-frames', 0).setDepth(11).setDisplaySize(94, 94);
     this.playerBaseScaleX = this.player.scaleX;
     this.playerBaseScaleY = this.player.scaleY;
     this.player.setCollideWorldBounds(false).setGravityY(1650).setBodySize(135, 310).setOffset(140, 55).setBounce(0);
@@ -229,7 +224,7 @@ export class GameScene extends Phaser.Scene {
     if (!this.anims.exists('runner-run')) {
       this.anims.create({
         key: 'runner-run',
-        frames: Array.from({ length: 6 }, (_, frame) => ({ key: 'runner', frame: String(frame) })),
+        frames: this.anims.generateFrameNumbers('runner-run-frames', { start: 0, end: 7 }),
         frameRate: RUN_ANIMATION_FRAME_RATE,
         repeat: -1,
       });
@@ -252,40 +247,6 @@ export class GameScene extends Phaser.Scene {
     this.groundTiles.forEach((tile) => tile.setTexture(`ground-${stage}`));
     this.groundEdge.setFillStyle([0xa8df84, 0xa1de9b, 0xc4e1e3][stage - 1], 0.9);
     this.cameras.main.setBackgroundColor(['#a5e3f2', '#78c4ec', '#5b69b6'][stage - 1]);
-  }
-
-  private createRunnerTexture(): void {
-    if (this.textures.exists('runner')) return;
-    const source = this.textures.get('runner-source').getSourceImage() as HTMLImageElement;
-    const texture = this.textures.createCanvas('runner', source.width, source.height);
-    if (!texture) return;
-
-    const context = texture.context;
-    const frameWidth = Math.floor(source.width / 3);
-    const frameHeight = Math.floor(source.height / 3);
-    for (let frame = 0; frame < 8; frame++) {
-      const cellX = (frame % 3) * frameWidth;
-      const cellY = Math.floor(frame / 3) * frameHeight;
-      const [offsetX, offsetY] = RUN_FRAME_OFFSETS[frame] ?? [0, 0];
-      context.drawImage(
-        source, cellX, cellY, frameWidth, frameHeight,
-        cellX + offsetX, cellY + offsetY, frameWidth, frameHeight,
-      );
-    }
-    const image = context.getImageData(0, 0, source.width, source.height);
-    const pixels = image.data;
-    for (let i = 0; i < pixels.length; i += 4) {
-      const red = pixels[i];
-      const green = pixels[i + 1];
-      const blue = pixels[i + 2];
-      const neutral = Math.max(red, green, blue) - Math.min(red, green, blue) < 12;
-      if (neutral && red > 224 && green > 224 && blue > 224) pixels[i + 3] = 0;
-    }
-    context.putImageData(image, 0, 0);
-    for (let frame = 0; frame < 8; frame++) {
-      texture.add(String(frame), 0, (frame % 3) * frameWidth, Math.floor(frame / 3) * frameHeight, frameWidth, frameHeight);
-    }
-    texture.refresh();
   }
 
   startRun(): void {
@@ -535,7 +496,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Hold the compact pose through the apex instead of snapping at zero speed.
-    this.player.stop().setFrame(velocityY < 100 ? '6' : '7');
+    this.player.stop().setTexture('runner-jump', velocityY < 100 ? 0 : 1);
   }
 
   private canCollideWithGround(): boolean {

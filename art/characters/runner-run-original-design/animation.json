@@ -1,0 +1,146 @@
+{
+  "frames": 8,
+  "rows": 2,
+  "columns": 4,
+  "cellSize": 384,
+  "frameDurationMs": 80,
+  "fps": 12.5,
+  "groundY": 323,
+  "source": "raw-sheet.png",
+  "prompt": "final.prompt.txt",
+  "generator": "built-in image_gen",
+  "gameIntegrated": true,
+  "alignment": "waist horizontal root; contact soles only; shared scale",
+  "frameData": [
+    {
+      "frame": 1,
+      "contact": true,
+      "sourceRootX": 253.84593837535016,
+      "translation": [
+        32.0770588235294,
+        33.829999999999984
+      ],
+      "alphaBounds": [
+        95,
+        79,
+        295,
+        325
+      ],
+      "sharedScale": 0.63
+    },
+    {
+      "frame": 2,
+      "contact": true,
+      "sourceRootX": 243.8955223880597,
+      "translation": [
+        38.345820895522394,
+        33.829999999999984
+      ],
+      "alphaBounds": [
+        132,
+        79,
+        270,
+        325
+      ],
+      "sharedScale": 0.63
+    },
+    {
+      "frame": 3,
+      "contact": true,
+      "sourceRootX": 223.1360201511335,
+      "translation": [
+        51.424307304785884,
+        35.08999999999998
+      ],
+      "alphaBounds": [
+        114,
+        78,
+        296,
+        325
+      ],
+      "sharedScale": 0.63
+    },
+    {
+      "frame": 4,
+      "contact": false,
+      "sourceRootX": 245.06310679611653,
+      "translation": [
+        37.610242718446585,
+        39.81499999999998
+      ],
+      "alphaBounds": [
+        81,
+        83,
+        299,
+        327
+      ],
+      "sharedScale": 0.63
+    },
+    {
+      "frame": 5,
+      "contact": true,
+      "sourceRootX": 262.92899408284023,
+      "translation": [
+        26.35473372781064,
+        44.539999999999985
+      ],
+      "alphaBounds": [
+        26,
+        80,
+        294,
+        367
+      ],
+      "sharedScale": 0.63
+    },
+    {
+      "frame": 6,
+      "contact": true,
+      "sourceRootX": 244.75,
+      "translation": [
+        37.807500000000005,
+        44.539999999999985
+      ],
+      "alphaBounds": [
+        124,
+        80,
+        265,
+        324
+      ],
+      "sharedScale": 0.63
+    },
+    {
+      "frame": 7,
+      "contact": true,
+      "sourceRootX": 241.48657718120805,
+      "translation": [
+        39.86345637583892,
+        45.16999999999999
+      ],
+      "alphaBounds": [
+        101,
+        77,
+        292,
+        324
+      ],
+      "sharedScale": 0.63
+    },
+    {
+      "frame": 8,
+      "contact": false,
+      "sourceRootX": 239.4918918918919,
+      "translation": [
+        41.1201081081081,
+        39.499999999999986
+      ],
+      "alphaBounds": [
+        91,
+        74,
+        364,
+        362
+      ],
+      "sharedScale": 0.63
+    }
+  ],
+  "runtimeAsset": "../../../public/assets/characters/runner-girl-run-original-design.png",
+  "referenceNote": "Original design sheet used at generation time; retired from runtime during cleanup."
+}

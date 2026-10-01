@@ -30,7 +30,6 @@ for name, (size, body, role, depth) in SPECS.items():
     assert box is not None and box[0] > 0 and box[1] > 0
     assert box[2] < source.width and box[3] < source.height
     crop = source.crop(box)
-    crop.save(SOURCE / f'{name}-trimmed.png')
     # Keep one transparent pixel around the silhouette and the exact original
     # physics texture dimensions. No runtime body-size/scale conversion needed.
     asset = Image.new('RGBA', size)
