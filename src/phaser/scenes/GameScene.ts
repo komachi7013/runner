@@ -9,13 +9,8 @@ const PIXELS_PER_DISTANCE = 10;
 const GOAL_APPROACH_CLEAR_DISTANCE = 50;
 const LIGHTNING_WARNING_SECONDS = 0.7;
 const LIGHTNING_GROUND_HIT_MARGIN = 12;
-const RUN_ANIMATION_FRAME_RATE = 10;
-// Align each complete pose at the torso and waist. The second source row is
-// authored about 35px higher, so it also needs a shared vertical correction.
-const RUN_FRAME_OFFSETS: ReadonlyArray<readonly [number, number]> = [
-  [0, 0], [18, 0], [45, 0],
-  [1, 35], [21, 35], [48, 35],
-];
+const RUN_ANIMATION_FRAME_RATE = 12.5;
+const JUMP_BUFFER_SECONDS = 0.12;
 
 interface GameEvents {
   onUpdate: (score: number, coins: number, best: number, stage: number, progress: number, retriesRemaining: number) => void;
@@ -67,7 +62,7 @@ export class GameScene extends Phaser.Scene {
     onComplete: () => undefined,
     onGameOver: () => undefined,
   };
-  private jumpQueued = false;
+  private jumpBuffer = 0;
   private coyoteTime = 0;
   private jumpsUsed = 0;
   private soundEnabled = true;
@@ -94,13 +89,21 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image('runner-source', '/assets/characters/runner-girl-run-jump-sheet.png');
+    this.load.spritesheet('runner-run-frames', '/assets/characters/runner-girl-run-original-design.png', {
+      frameWidth: 418,
+      frameHeight: 418,
+      endFrame: 7,
+    });
+    this.load.spritesheet('runner-jump', '/assets/characters/runner-girl-jump-matched.png', { frameWidth: 418, frameHeight: 418, endFrame: 1 });
     this.load.image('stage-1-scenery', '/assets/map/stage-1-meadow.png');
     this.load.image('stage-2-scenery', '/assets/map/stage-2-highland.png');
     this.load.image('stage-3-scenery', '/assets/map/stage-3-moonlight.png');
     this.load.image('stage-1-foreground', '/assets/map/stage-1-foreground.png');
     this.load.image('stage-2-foreground', '/assets/map/stage-2-foreground.png');
     this.load.image('stage-3-foreground', '/assets/map/stage-3-foreground.png');
+    for (const prop of ['spike', 'block', 'floater', 'storm-cloud', 'goal']) {
+      this.load.image(prop, `/assets/props/retro/${prop}.png`);
+    }
   }
 
   create(): void {
@@ -128,9 +131,14 @@ export class GameScene extends Phaser.Scene {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (pointer.y > 80) this.queueJump();
     });
-    this.input.keyboard?.on('keydown-SPACE', () => this.queueJump());
-    this.input.keyboard?.on('keydown-UP', () => this.queueJump());
-    this.input.keyboard?.on('keydown-W', () => this.queueJump());
+    const onJumpKey = (event: KeyboardEvent) => {
+      if (!event.repeat) this.queueJump();
+    };
+    // Let Phaser receive the key before suppressing browser scrolling.
+    this.input.keyboard?.addCapture(['SPACE', 'UP', 'W']);
+    this.input.keyboard?.on('keydown-SPACE', onJumpKey);
+    this.input.keyboard?.on('keydown-UP', onJumpKey);
+    this.input.keyboard?.on('keydown-W', onJumpKey);
 
     this.events.on('start-run', () => this.startRun());
     this.events.on('jump', () => this.queueJump());
@@ -145,29 +153,10 @@ export class GameScene extends Phaser.Scene {
   private createTextures(): void {
     const g = this.add.graphics();
 
-    this.createRunnerTexture();
-
     g.fillStyle(0xffd75e).fillCircle(15, 15, 14);
     g.lineStyle(3, 0xfff2aa).strokeCircle(15, 15, 10);
     g.fillStyle(0xe6a72e).fillRect(13, 7, 4, 16);
     g.generateTexture('coin', 30, 30).clear();
-
-    g.fillStyle(0xffffff).fillTriangle(0, 62, 25, 0, 50, 62);
-    g.fillStyle(0xe6e6e6).fillTriangle(8, 62, 25, 14, 34, 62);
-    g.lineStyle(3, 0xffffff, 0.95).strokeTriangle(0, 62, 25, 0, 50, 62);
-    g.generateTexture('spike', 50, 62).clear();
-
-    g.fillStyle(0xffffff).fillRoundedRect(0, 0, 70, 82, 8);
-    g.fillStyle(0xe8e8e8).fillRoundedRect(8, 9, 54, 10, 5);
-    g.fillStyle(0xd0d0d0).fillRoundedRect(10, 64, 50, 18, 5);
-    g.lineStyle(3, 0xffffff, 0.9).strokeRoundedRect(1, 1, 68, 80, 8);
-    g.generateTexture('block', 70, 82).clear();
-
-    g.fillStyle(0xffffff).fillRoundedRect(0, 0, 106, 48, 18);
-    g.fillStyle(0xe4e4e4).fillRoundedRect(10, 8, 86, 10, 5);
-    g.fillStyle(0xf5f5f5).fillCircle(20, 34, 5).fillCircle(86, 34, 5);
-    g.lineStyle(3, 0xffffff, 0.9).strokeRoundedRect(3, 3, 100, 42, 16);
-    g.generateTexture('floater', 106, 48).clear();
 
     const grounds = [
       { name: 'ground-1', soil: 0xcaa579, grass: 0x82c977, trim: 0xa8df84 },
@@ -184,12 +173,6 @@ export class GameScene extends Phaser.Scene {
 
     g.fillStyle(0xffffff, 0.14).fillCircle(48, 24, 22).fillCircle(76, 20, 30).fillCircle(104, 28, 19).fillRoundedRect(40, 25, 82, 25, 14);
     g.generateTexture('cloud', 140, 60).clear();
-
-    g.fillStyle(0x34395f).fillCircle(35, 34, 27);
-    g.fillStyle(0x42496f).fillCircle(70, 25, 35).fillCircle(105, 36, 25);
-    g.fillStyle(0x292e52).fillRoundedRect(16, 34, 112, 34, 17);
-    g.lineStyle(4, 0x707aa8, 0.8).strokeRoundedRect(17, 35, 110, 32, 16);
-    g.generateTexture('storm-cloud', 145, 76).clear();
 
     g.fillStyle(0xfff36a).fillPoints([
       new Phaser.Geom.Point(31, 0),
@@ -232,7 +215,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createPlayer(): void {
-    this.player = this.physics.add.sprite(225, GROUND_Y - 47, 'runner', '0').setDepth(11).setDisplaySize(94, 94);
+    this.player = this.physics.add.sprite(225, GROUND_Y - 47, 'runner-run-frames', 0).setDepth(11).setDisplaySize(94, 94);
     this.playerBaseScaleX = this.player.scaleX;
     this.playerBaseScaleY = this.player.scaleY;
     this.player.setCollideWorldBounds(false).setGravityY(1650).setBodySize(135, 310).setOffset(140, 55).setBounce(0);
@@ -241,7 +224,7 @@ export class GameScene extends Phaser.Scene {
     if (!this.anims.exists('runner-run')) {
       this.anims.create({
         key: 'runner-run',
-        frames: Array.from({ length: 6 }, (_, frame) => ({ key: 'runner', frame: String(frame) })),
+        frames: this.anims.generateFrameNumbers('runner-run-frames', { start: 0, end: 7 }),
         frameRate: RUN_ANIMATION_FRAME_RATE,
         repeat: -1,
       });
@@ -264,40 +247,6 @@ export class GameScene extends Phaser.Scene {
     this.groundTiles.forEach((tile) => tile.setTexture(`ground-${stage}`));
     this.groundEdge.setFillStyle([0xa8df84, 0xa1de9b, 0xc4e1e3][stage - 1], 0.9);
     this.cameras.main.setBackgroundColor(['#a5e3f2', '#78c4ec', '#5b69b6'][stage - 1]);
-  }
-
-  private createRunnerTexture(): void {
-    if (this.textures.exists('runner')) return;
-    const source = this.textures.get('runner-source').getSourceImage() as HTMLImageElement;
-    const texture = this.textures.createCanvas('runner', source.width, source.height);
-    if (!texture) return;
-
-    const context = texture.context;
-    const frameWidth = Math.floor(source.width / 3);
-    const frameHeight = Math.floor(source.height / 3);
-    for (let frame = 0; frame < 8; frame++) {
-      const cellX = (frame % 3) * frameWidth;
-      const cellY = Math.floor(frame / 3) * frameHeight;
-      const [offsetX, offsetY] = RUN_FRAME_OFFSETS[frame] ?? [0, 0];
-      context.drawImage(
-        source, cellX, cellY, frameWidth, frameHeight,
-        cellX + offsetX, cellY + offsetY, frameWidth, frameHeight,
-      );
-    }
-    const image = context.getImageData(0, 0, source.width, source.height);
-    const pixels = image.data;
-    for (let i = 0; i < pixels.length; i += 4) {
-      const red = pixels[i];
-      const green = pixels[i + 1];
-      const blue = pixels[i + 2];
-      const neutral = Math.max(red, green, blue) - Math.min(red, green, blue) < 12;
-      if (neutral && red > 224 && green > 224 && blue > 224) pixels[i + 3] = 0;
-    }
-    context.putImageData(image, 0, 0);
-    for (let frame = 0; frame < 8; frame++) {
-      texture.add(String(frame), 0, (frame % 3) * frameWidth, Math.floor(frame / 3) * frameHeight, frameWidth, frameHeight);
-    }
-    texture.refresh();
   }
 
   startRun(): void {
@@ -332,11 +281,12 @@ export class GameScene extends Phaser.Scene {
       .setAngle(0)
       .setVisible(true);
     this.player.play('runner-run');
+    this.player.anims.timeScale = 1;
     this.spawnTimer = 900;
     this.floaterCooldownMs = 0;
     this.jumpsUsed = 0;
     this.coyoteTime = 0;
-    this.jumpQueued = false;
+    this.jumpBuffer = 0;
     this.lastSnapshotScore = -1;
     this.stageTransitioning = false;
     this.finishCorridorPrepared = false;
@@ -349,7 +299,7 @@ export class GameScene extends Phaser.Scene {
 
   private queueJump(): void {
     if (this.runState.snapshot().phase !== 'running') return;
-    this.jumpQueued = true;
+    this.jumpBuffer = JUMP_BUFFER_SECONDS;
   }
 
   update(_time: number, deltaMs: number): void {
@@ -373,31 +323,34 @@ export class GameScene extends Phaser.Scene {
     this.groundTiles.forEach((tile) => { tile.tilePositionX += current.speed * dt; });
     this.foreground.tilePositionX += current.speed * dt * 0.16;
 
-    const grounded = this.player.body?.blocked.down ?? false;
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    const grounded = (playerBody.blocked.down || playerBody.touching.down) && playerBody.velocity.y >= 0;
     if (grounded) this.jumpsUsed = 0;
     this.coyoteTime = grounded ? 0.1 : Math.max(0, this.coyoteTime - dt);
-    if (this.jumpQueued && (this.coyoteTime > 0 || this.jumpsUsed < 2)) {
+    // Walking off a ledge spends the ground jump after the grace period.
+    if (!grounded && this.coyoteTime <= 0 && this.jumpsUsed === 0) this.jumpsUsed = 1;
+    if (this.jumpBuffer > 0 && (this.coyoteTime > 0 || this.jumpsUsed < 2)) {
       const isDoubleJump = !grounded && this.coyoteTime <= 0 && this.jumpsUsed > 0;
       this.player.setVelocityY(isDoubleJump ? -610 : -660);
       this.jumpsUsed += 1;
       this.coyoteTime = 0;
+      this.jumpBuffer = 0;
       this.playTone(isDoubleJump ? 690 : 520, 0.06, 'square');
       if (isDoubleJump) {
+        this.tweens.killTweensOf(this.player);
         this.player.setScale(this.playerBaseScaleX * 1.12, this.playerBaseScaleY * 1.12);
         this.tweens.add({
           targets: this.player,
           scaleX: this.playerBaseScaleX,
           scaleY: this.playerBaseScaleY,
           duration: 150,
-          ease: 'Back.out',
+          ease: 'Sine.out',
         });
       }
     }
-    if (this.jumpQueued) {
-      this.jumpQueued = false;
-    }
+    this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
 
-    this.updatePlayerAnimation(grounded);
+    this.updatePlayerAnimation(grounded, dt, current.speed);
     this.moveGroup(this.obstacles, current.speed, dt, -120);
     this.moveGroup(this.platforms, current.speed, dt, -140);
     this.moveGroup(this.coins, current.speed, dt, -80);
@@ -510,21 +463,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createGoalLine(stage: number): Phaser.GameObjects.Container {
-    const leftPost = this.add.rectangle(-70, -78, 12, 156, 0xf5f1ff).setStrokeStyle(3, 0x5869b5);
-    const rightPost = this.add.rectangle(70, -78, 12, 156, 0xf5f1ff).setStrokeStyle(3, 0x5869b5);
-    const banner = this.add.rectangle(0, -142, 152, 42, 0xffd75e).setStrokeStyle(4, 0xffffff);
+    const gate = this.add.image(0, 0, 'goal').setOrigin(0.5, 1);
     const label = this.add.text(0, -142, `GOAL ${stage}`, {
-      color: '#2c2545',
-      fontFamily: 'system-ui, sans-serif',
-      fontSize: '20px',
+      color: '#513c2b',
+      fontFamily: 'Georgia, serif',
+      fontSize: '18px',
       fontStyle: 'bold',
     }).setOrigin(0.5);
-    const line = this.add.graphics();
-    for (let index = 0; index < 8; index++) {
-      line.fillStyle(index % 2 === 0 ? 0xffffff : 0x313d7a);
-      line.fillRect(-72 + index * 18, -8, 18, 16);
-    }
-    return this.add.container(VIEW_W + 100, GROUND_Y, [leftPost, rightPost, banner, label, line]).setDepth(12);
+    return this.add.container(VIEW_W + 100, GROUND_Y, [gate, label]).setDepth(12);
   }
 
   private moveGroup(group: Phaser.Physics.Arcade.Group, speed: number, dt: number, cutoff: number): void {
@@ -535,18 +481,22 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private updatePlayerAnimation(grounded: boolean): void {
+  private updatePlayerAnimation(grounded: boolean, dt: number, speed: number): void {
     const velocityY = this.player.body!.velocity.y;
+    const blend = 1 - Math.exp(-18 * dt);
+    const targetAngle = grounded ? 0 : Phaser.Math.Clamp(velocityY * 0.006, -4, 6);
+    this.player.setAngle(Phaser.Math.Linear(this.player.angle, targetAngle, blend));
+    const targetCadence = Phaser.Math.Clamp(speed / 300, 1, 1.45);
+    this.player.anims.timeScale = Phaser.Math.Linear(this.player.anims.timeScale, targetCadence, blend);
     if (grounded && Math.abs(velocityY) < 40) {
-      this.player.setAngle(0);
       if (this.player.anims.currentAnim?.key !== 'runner-run' || !this.player.anims.isPlaying) {
         this.player.play('runner-run');
       }
       return;
     }
 
-    this.player.stop().setFrame(velocityY < 0 ? '6' : '7');
-    this.player.setAngle(Phaser.Math.Clamp(velocityY * 0.006, -4, 6));
+    // Hold the compact pose through the apex instead of snapping at zero speed.
+    this.player.stop().setTexture('runner-jump', velocityY < 100 ? 0 : 1);
   }
 
   private canCollideWithGround(): boolean {
@@ -642,14 +592,14 @@ export class GameScene extends Phaser.Scene {
       floater
         .setDepth(8)
         .setBodySize(94, 38);
-      floater.setTint([0x9fdf95, 0x83d0a0, 0xb7c4f5][stage - 1]);
+      floater.setTint([0xffffff, 0xf2fff5, 0xcdd6f5][stage - 1]);
       this.floaterCooldownMs = [4800, 4000, 3400][stage - 1];
     } else {
       const useBlock = Phaser.Math.Between(0, 100) < 35;
       const group = useBlock ? this.platforms : this.obstacles;
       const obstacle = group.create(x, GROUND_Y - (useBlock ? 41 : 31), useBlock ? 'block' : 'spike') as Phaser.Physics.Arcade.Image;
       obstacle.setDepth(8).setBodySize(useBlock ? 58 : 34, useBlock ? 74 : 48);
-      obstacle.setTint(useBlock ? [0xb8d990, 0x8ac7a1, 0xaaa8d9][stage - 1] : [0xffc1d0, 0xffa9bd, 0xffb5dd][stage - 1]);
+      obstacle.setTint([0xffffff, 0xf2fff5, 0xcdd6f5][stage - 1]);
     }
 
     const count = Phaser.Math.Between(3, 6);
