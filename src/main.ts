@@ -107,7 +107,7 @@ const game = new Phaser.Game({
             ? '拳を握って再挑戦を決意するランナー'
             : 'ゴールに届かず、道に膝をついて悔しがるランナー';
           gameoverMessage.textContent = canRetryStage
-            ? `残り${retriesRemaining}回。スコアとコインは面の開始時点に戻ります。`
+            ? `残り${retriesRemaining}回。獲得したコインとその得点は保持されます。コイン100枚ごとにリトライが1回増えます。`
             : '次は1面から新しく挑戦します。';
           retryButton.innerHTML = canRetryStage ? 'この面をやり直す <span>↻</span>' : '1面から再挑戦 <span>↻</span>';
           gameoverPanel.classList.add('visible');

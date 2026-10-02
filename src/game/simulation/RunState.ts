@@ -16,6 +16,7 @@ const BEST_KEY = 'skybound-sprint-best';
 export const COIN_SCORE = 100;
 export const FINAL_STAGE = 3;
 export const MAX_RETRIES = 3;
+export const COINS_PER_RETRY = 100;
 export const STAGE_DISTANCES = [1500, 1500, 2000] as const;
 
 export function getStageDistance(stage: number): number {
@@ -32,7 +33,6 @@ export class RunState {
   private speed = 300;
   private retriesRemaining = MAX_RETRIES;
   private checkpointTotalDistance = 0;
-  private checkpointCoins = 0;
 
   start(): void {
     this.phase = 'running';
@@ -43,7 +43,6 @@ export class RunState {
     this.speed = 300;
     this.retriesRemaining = MAX_RETRIES;
     this.checkpointTotalDistance = 0;
-    this.checkpointCoins = 0;
   }
 
   update(deltaSeconds: number): void {
@@ -65,7 +64,6 @@ export class RunState {
     this.stageDistance = 0;
     this.speed = 440;
     this.checkpointTotalDistance = this.totalDistance;
-    this.checkpointCoins = this.coins;
     this.phase = 'running';
   }
 
@@ -74,7 +72,6 @@ export class RunState {
     this.retriesRemaining -= 1;
     this.stageDistance = 0;
     this.totalDistance = this.checkpointTotalDistance;
-    this.coins = this.checkpointCoins;
     this.speed = this.stage === 1 ? 300 : 440;
     this.phase = 'running';
     return true;
@@ -83,6 +80,7 @@ export class RunState {
   collectCoin(): void {
     if (this.phase !== 'running') return;
     this.coins += 1;
+    if (this.coins % COINS_PER_RETRY === 0) this.retriesRemaining += 1;
   }
 
   end(): void {
