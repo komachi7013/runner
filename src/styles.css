@@ -122,6 +122,7 @@ kbd { padding: 3px 7px; border: 1px solid rgba(255,255,255,.25); border-radius: 
 }
 #pause-button { right: calc(clamp(18px, 4vw, 56px) + 54px); font-size: 15px; }
 #pause-button:disabled { opacity: .35; cursor: default; }
+#start-button:disabled { opacity: .55; cursor: wait; }
 #pause-button[aria-pressed="true"] { color: var(--gold); border-color: rgba(255,215,94,.45); }
 #sound-button.muted { opacity: .5; }
 .pause-panel { z-index: 7; }
