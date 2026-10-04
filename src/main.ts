@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
-import Phaser from 'phaser';
-import { GameScene } from './phaser/scenes/GameScene';
+import type Phaser from 'phaser';
+import type { GameScene } from './phaser/scenes/GameScene';
 import './styles.css';
 
 declare global {
@@ -44,90 +44,122 @@ const pausePanel = document.querySelector('#pause-panel')!;
 const resumeButton = document.querySelector<HTMLButtonElement>('#resume-button')!;
 const jumpHint = document.querySelector('#jump-hint')!;
 
+const startButton = document.querySelector<HTMLButtonElement>('#start-button')!;
+const loadingStatus = document.querySelector<HTMLElement>('#loading-status')!;
 let scene: GameScene;
+let game: Phaser.Game | undefined;
+let ready = false;
 let soundEnabled = true;
 let paused = false;
 let canRetryStage = false;
 const portraitPhone = window.matchMedia('(orientation: portrait) and (pointer: coarse)');
 let pausedForOrientation = false;
 
-const game = new Phaser.Game({
-  type: Phaser.AUTO,
-  parent: 'game',
-  width: 1280,
-  height: 720,
-  backgroundColor: '#101535',
-  physics: {
-    default: 'arcade',
-    arcade: { debug: false },
-  },
-  scale: {
-    mode: Phaser.Scale.ENVELOP,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-  },
-  scene: GameScene,
-  render: { antialias: true, pixelArt: false },
-  callbacks: {
-    postBoot: () => {
-      scene = game.scene.getScene('game') as GameScene;
-      scene.setGameEvents({
-        onUpdate: (score: number, coins: number, best: number, stage: number, progress: number, retriesRemaining: number) => {
-          scoreEl.textContent = String(score).padStart(5, '0');
-          coinsEl.textContent = String(coins).padStart(2, '0');
-          bestEl.textContent = String(best).padStart(5, '0');
-          stageEl.textContent = `${stage} / 3`;
-          retriesEl.textContent = String(retriesRemaining);
-          progressEl.style.width = `${Math.round(progress * 100)}%`;
+async function loadGame(): Promise<void> {
+  try {
+    const [{ default: Phaser }, { GameScene }] = await Promise.all([
+      import('phaser'),
+      import('./phaser/scenes/GameScene'),
+    ]);
+    if (eventController.signal.aborted) return;
+    const instance = new Phaser.Game({
+      type: Phaser.AUTO,
+      parent: 'game',
+      width: 1280,
+      height: 720,
+      backgroundColor: '#101535',
+      physics: {
+        default: 'arcade',
+        arcade: { debug: false },
+      },
+      scale: {
+        mode: Phaser.Scale.ENVELOP,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+      },
+      scene: GameScene,
+      render: { antialias: true, pixelArt: false },
+      callbacks: {
+        postBoot: () => {
+          scene = instance.scene.getScene('game') as GameScene;
+          let assetLoadFailed = false;
+          scene.load.on('loaderror', () => {
+            assetLoadFailed = true;
+            loadingStatus.textContent = '読み込みに失敗しました。ページを再読み込みしてください。';
+          });
+          scene.events.once(Phaser.Scenes.Events.CREATE, () => {
+            if (eventController.signal.aborted || assetLoadFailed) return;
+            ready = true;
+            startButton.disabled = false;
+            startButton.innerHTML = '走り出す <span>→</span>';
+            loadingStatus.textContent = '準備ができました。';
+            scene.events.emit('toggle-sound', soundEnabled);
+            keepGroundVisible();
+          });
+          scene.setGameEvents({
+            onUpdate: (score: number, coins: number, best: number, stage: number, progress: number, retriesRemaining: number) => {
+              scoreEl.textContent = String(score).padStart(5, '0');
+              coinsEl.textContent = String(coins).padStart(2, '0');
+              bestEl.textContent = String(best).padStart(5, '0');
+              stageEl.textContent = `${stage} / 3`;
+              retriesEl.textContent = String(retriesRemaining);
+              progressEl.style.width = `${Math.round(progress * 100)}%`;
+            },
+            onStageClear: (stage: number) => {
+              stageBanner.textContent = `${stage}面 ゴール！　次は${stage + 1}面`;
+              stageBanner.classList.add('visible');
+              window.setTimeout(() => stageBanner.classList.remove('visible'), 1200);
+            },
+            onComplete: (score: number, coins: number) => {
+              const clearedTarget = score >= 20000;
+              completeTitle.textContent = clearedTarget ? '全3面 走破！' : 'あと一歩…！';
+              completeMessage.textContent = clearedTarget ? '20000点達成！ 最高の走り！' : '目標は20000点。もう一度挑戦！';
+              completeImage.src = clearedTarget ? '/assets/results/runner-victory.png' : '/assets/results/runner-frustrated.png';
+              completeImage.alt = clearedTarget
+                ? '汗をかきながら走破を喜ぶランナー'
+                : '四つん這いになって悔しがるランナー';
+              completeScore.textContent = String(score).padStart(5, '0');
+              completeCoins.textContent = `コイン ${coins} 枚`;
+              completePanel.classList.add('visible');
+              finishUiState();
+            },
+            onGameOver: (score: number, coins: number, stage: number, retriesRemaining: number) => {
+              finalScore.textContent = String(score).padStart(5, '0');
+              finalCoins.textContent = `コイン ${coins} 枚`;
+              canRetryStage = retriesRemaining > 0;
+              gameoverTitle.textContent = canRetryStage ? `${stage}面の最初から再挑戦` : 'リトライを使い切りました';
+              gameoverImage.src = canRetryStage ? '/assets/results/runner-retry.png' : '/assets/results/runner-gameover.png';
+              gameoverImage.alt = canRetryStage
+                ? '拳を握って再挑戦を決意するランナー'
+                : 'ゴールに届かず、道に膝をついて悔しがるランナー';
+              gameoverMessage.textContent = canRetryStage
+                ? `残り${retriesRemaining}回。獲得したコインとその得点は保持されます。コイン100枚ごとにリトライが1回増えます。`
+                : '次は1面から新しく挑戦します。';
+              retryButton.innerHTML = canRetryStage ? 'この面をやり直す <span>↻</span>' : '1面から再挑戦 <span>↻</span>';
+              gameoverPanel.classList.add('visible');
+              finishUiState();
+            },
+          });
         },
-        onStageClear: (stage: number) => {
-          stageBanner.textContent = `${stage}面 ゴール！　次は${stage + 1}面`;
-          stageBanner.classList.add('visible');
-          window.setTimeout(() => stageBanner.classList.remove('visible'), 1200);
-        },
-        onComplete: (score: number, coins: number) => {
-          const clearedTarget = score >= 20000;
-          completeTitle.textContent = clearedTarget ? '全3面 走破！' : 'あと一歩…！';
-          completeMessage.textContent = clearedTarget ? '20000点達成！ 最高の走り！' : '目標は20000点。もう一度挑戦！';
-          completeImage.src = clearedTarget ? '/assets/results/runner-victory.png' : '/assets/results/runner-frustrated.png';
-          completeImage.alt = clearedTarget
-            ? '汗をかきながら走破を喜ぶランナー'
-            : '四つん這いになって悔しがるランナー';
-          completeScore.textContent = String(score).padStart(5, '0');
-          completeCoins.textContent = `コイン ${coins} 枚`;
-          completePanel.classList.add('visible');
-          finishUiState();
-        },
-        onGameOver: (score: number, coins: number, stage: number, retriesRemaining: number) => {
-          finalScore.textContent = String(score).padStart(5, '0');
-          finalCoins.textContent = `コイン ${coins} 枚`;
-          canRetryStage = retriesRemaining > 0;
-          gameoverTitle.textContent = canRetryStage ? `${stage}面の最初から再挑戦` : 'リトライを使い切りました';
-          gameoverImage.src = canRetryStage ? '/assets/results/runner-retry.png' : '/assets/results/runner-gameover.png';
-          gameoverImage.alt = canRetryStage
-            ? '拳を握って再挑戦を決意するランナー'
-            : 'ゴールに届かず、道に膝をついて悔しがるランナー';
-          gameoverMessage.textContent = canRetryStage
-            ? `残り${retriesRemaining}回。スコアとコインは面の開始時点に戻ります。`
-            : '次は1面から新しく挑戦します。';
-          retryButton.innerHTML = canRetryStage ? 'この面をやり直す <span>↻</span>' : '1面から再挑戦 <span>↻</span>';
-          gameoverPanel.classList.add('visible');
-          finishUiState();
-        },
-      });
-    },
-  },
-});
-window.__skyboundSprintGame = game;
+      },
+    });
+    game = instance;
+    window.__skyboundSprintGame = instance;
+    instance.scale.on(Phaser.Scale.Events.RESIZE, keepGroundVisible);
+    keepGroundVisible();
+  } catch {
+    if (!eventController.signal.aborted) {
+      loadingStatus.textContent = '読み込みに失敗しました。ページを再読み込みしてください。';
+    }
+  }
+}
 
 function keepGroundVisible(): void {
+  if (!game?.canvas) return;
   const parent = document.querySelector<HTMLElement>('#game')!;
   const clippedHeight = Math.max(0, game.canvas.getBoundingClientRect().height - parent.clientHeight);
   game.canvas.style.marginTop = `${-clippedHeight}px`;
   game.scale.updateBounds();
 }
-
-game.scale.on(Phaser.Scale.Events.RESIZE, keepGroundVisible);
-keepGroundVisible();
 
 function finishUiState(): void {
   jumpHint.classList.remove('visible');
@@ -164,11 +196,11 @@ function syncOrientation(): void {
     pausedForOrientation = false;
     setPaused(false);
   }
-  game.scale.refresh();
+  game?.scale.refresh();
 }
 
 function beginRun(): void {
-  if (portraitPhone.matches) return;
+  if (!ready || portraitPhone.matches) return;
   pausedForOrientation = false;
   if (paused) setPaused(false);
   startPanel.classList.remove('visible');
@@ -185,7 +217,7 @@ function beginRun(): void {
 }
 
 function retry(): void {
-  if (portraitPhone.matches) return;
+  if (!ready || portraitPhone.matches) return;
   if (!canRetryStage) {
     beginRun();
     return;
@@ -205,14 +237,14 @@ document.querySelector('#complete-retry-button')?.addEventListener('click', begi
 pauseButton.addEventListener('click', () => setPaused(!paused), { signal: eventController.signal });
 resumeButton.addEventListener('click', () => setPaused(false), { signal: eventController.signal });
 portraitPhone.addEventListener('change', syncOrientation, { signal: eventController.signal });
-window.addEventListener('resize', () => game.scale.refresh(), { signal: eventController.signal });
-window.visualViewport?.addEventListener('resize', () => game.scale.refresh(), { signal: eventController.signal });
+window.addEventListener('resize', () => game?.scale.refresh(), { signal: eventController.signal });
+window.visualViewport?.addEventListener('resize', () => game?.scale.refresh(), { signal: eventController.signal });
 
 soundButton.addEventListener('click', () => {
   soundEnabled = !soundEnabled;
   soundButton.textContent = soundEnabled ? '♪' : '×';
   soundButton.classList.toggle('muted', !soundEnabled);
-  scene.events.emit('toggle-sound', soundEnabled);
+  if (ready) scene.events.emit('toggle-sound', soundEnabled);
 }, { signal: eventController.signal });
 
 window.addEventListener('keydown', (event) => {
@@ -227,8 +259,10 @@ window.addEventListener('keydown', (event) => {
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     eventController.abort();
-    game.destroy(true);
+    game?.destroy(true);
     if (window.__skyboundSprintGame === game) window.__skyboundSprintGame = undefined;
     if (window.__skyboundSprintEvents === eventController) window.__skyboundSprintEvents = undefined;
   });
 }
+
+void loadGame();
